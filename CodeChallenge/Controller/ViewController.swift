@@ -154,6 +154,11 @@ class ViewController: UIViewController {
         return String(format:"%02i:%02i", minutes, seconds)
     }
 
+
+    //
+    // MARK: - Keyboard Resizing
+    //
+
     @IBOutlet var bottomConstraintForKeyboard: NSLayoutConstraint!
 
     @objc func keyboardWillShow(sender: NSNotification) {
@@ -167,7 +172,7 @@ class ViewController: UIViewController {
     @objc func keyboardWillHide(sender: NSNotification) {
         let info = sender.userInfo!
         let s: TimeInterval = (info[UIResponder.keyboardAnimationDurationUserInfoKey] as! NSNumber).doubleValue
-        bottomConstraintForKeyboard.constant = 16
+        bottomConstraintForKeyboard.constant = 0
         UIView.animate(withDuration: s) { self.view.layoutIfNeeded() }
     }
 
