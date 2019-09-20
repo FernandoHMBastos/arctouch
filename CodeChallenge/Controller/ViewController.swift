@@ -29,12 +29,18 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        keyboardNotifications()
+        let t = UITapGestureRecognizer(target: self, action: #selector(clearKeyboard))
+        view.addGestureRecognizer(t)
+        t.cancelsTouchesInView = false
+
         answersTable.register(UITableViewCell.self,
                               forCellReuseIdentifier: "answerCell")
         answersTable.isHidden = true
         timerButton.setTitle("Start", for: .normal)
 
-        self.sessionQuiz.getRequest(completionHandler: {(success) -> Void in
+        self.sessionQuiz.getQuizFromAPI(completionHandler: {(success) -> Void in
             print(success)
 
             if success {
@@ -80,7 +86,7 @@ class ViewController: UIViewController {
         }
 
         if(sessionQuiz.answer.count == userAnswers.answers.count){
-            gameOverAlert(timeout: false)
+            showGameOverAlert(timeout: false)
         }
     }
 
@@ -110,11 +116,11 @@ class ViewController: UIViewController {
             timerLabel.text = timeString(time: TimeInterval(seconds))
         }
         else{
-            gameOverAlert(timeout: true)
+            showGameOverAlert(timeout: true)
         }
     }
 
-    func gameOverAlert(timeout: Bool){
+    func showGameOverAlert(timeout: Bool){
 
         timer.invalidate()
 
@@ -146,6 +152,38 @@ class ViewController: UIViewController {
         let minutes = Int(time) / 60 % 60
         let seconds = Int(time) % 60
         return String(format:"%02i:%02i", minutes, seconds)
+    }
+
+    @IBOutlet var bottomConstraintForKeyboard: NSLayoutConstraint!
+
+    @objc func keyboardWillShow(sender: NSNotification) {
+        let i = sender.userInfo!
+        let k = (i[UIResponder.keyboardFrameEndUserInfoKey] as! NSValue).cgRectValue.height
+        bottomConstraintForKeyboard.constant = k - bottomLayoutGuide.length
+        let s: TimeInterval = (i[UIResponder.keyboardAnimationDurationUserInfoKey] as! NSNumber).doubleValue
+        UIView.animate(withDuration: s) { self.view.layoutIfNeeded() }
+    }
+
+    @objc func keyboardWillHide(sender: NSNotification) {
+        let info = sender.userInfo!
+        let s: TimeInterval = (info[UIResponder.keyboardAnimationDurationUserInfoKey] as! NSNumber).doubleValue
+        bottomConstraintForKeyboard.constant = 16
+        UIView.animate(withDuration: s) { self.view.layoutIfNeeded() }
+    }
+
+    @objc func clearKeyboard() {
+        view.endEditing(true)
+    }
+
+    func keyboardNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(keyboardWillShow),
+                                               name: UIResponder.keyboardWillShowNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(keyboardWillHide),
+                                               name: UIResponder.keyboardWillHideNotification,
+                                               object: nil)
     }
 }
 

@@ -31,34 +31,37 @@ class Quiz: Decodable {
     //
     typealias CompletionHandler = (_ success:Bool) -> Void
     
-    func getRequest(completionHandler: @escaping CompletionHandler) {
+    func getQuizFromAPI(completionHandler: @escaping CompletionHandler) {
         if let url = URL(string: "https://codechallenge.arctouch.com/quiz/1") {
-            URLSession.shared.dataTask(with: url) { data, response, error in
+            let task = URLSession.shared.dataTask(with: url) { data, response, error in
 
-                if (response != nil){
-                    if let data = data {
-                        do {
-                            let res = try JSONDecoder().decode(Quiz.self, from: data)
-                            DispatchQueue.main.async {
-                                self.question = res.question
-                                self.answer = res.answer
+                guard let dataResponse = data,
+                    error == nil else { print(error?.localizedDescription ?? "Response Error")
+                        self.question = "Loading Error - Please check your connection"
+                        self.answer = []
+                        completionHandler(false)
+                        return
 
-                                completionHandler(true)
-                            }
-                        } catch let error {
-                            print(error)
-                            completionHandler(false)
-                        }
-                    }
                 }
-                else {
-                    self.question = "Loading Error"
-                    self.answer = []
+                do {
+                    let jsonResponse = try JSONDecoder().decode(Quiz.self, from: dataResponse)
+                    DispatchQueue.main.async {
+                        self.question = jsonResponse.question
+                        self.answer = jsonResponse.answer
+
+                        completionHandler(true)
+                    }
+                } catch let parsingError {
+                    print(parsingError)
                     completionHandler(false)
                 }
+            }
+            task.resume()
 
-                }.resume()
         }
+
     }
 }
+
+
 
